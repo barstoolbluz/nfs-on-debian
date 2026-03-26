@@ -1,4 +1,4 @@
-# nfsctl
+# nfstictl
 
 Modular, idempotent NFS configuration tool for Debian.
 
