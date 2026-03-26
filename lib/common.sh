@@ -81,6 +81,10 @@ _LOCK_FD=""
 
 acquire_lock() {
     local lockfile="${LOCK_FILE:-/var/lock/nfsctl.lock}"
+    # Remove stale lock file if it exists but can't be opened (e.g., wrong ownership)
+    if [[ -f "$lockfile" ]] && ! bash -c "exec 200>\"$lockfile\"" 2>/dev/null; then
+        rm -f "$lockfile" 2>/dev/null || true
+    fi
     exec 200>"$lockfile"
     _LOCK_FD=200
     if ! flock -n 200; then
