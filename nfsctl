@@ -1,0 +1,128 @@
+#!/usr/bin/env bash
+# nfsctl — Main entry point / dispatcher for NFS configuration
+set -euo pipefail
+
+export NFSCTL_ROOT
+NFSCTL_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Save original args for require_root sudo re-exec
+_NFSCTL_ORIG_ARGS=("$@")
+
+# ── Global flag parsing ──────────────────────────────────────────────
+export VERBOSE=0
+export DRY_RUN=0
+export YES=0
+
+usage() {
+    cat <<'EOF'
+Usage: nfsctl [global-flags] <command> [subcommand] [flags]
+
+Global flags:
+  -v, --verbose     Enable verbose/debug output
+  -n, --dry-run     Show what would be done without making changes
+  -y, --yes         Auto-confirm all prompts (non-interactive mode)
+  -h, --help        Show this help message
+
+Commands:
+  install               Install NFS server or client packages
+  export add            Add an NFS export
+  export remove         Remove an NFS export
+  export list           List current NFS exports
+  export apply          Apply exports (exportfs -ra)
+  service <action>      Manage NFS services (start|stop|restart|enable|disable|status)
+  firewall              Configure firewall rules for NFS
+  status                Show NFS server status overview
+  setup                 Full guided setup wizard
+
+Examples:
+  sudo nfsctl setup
+  sudo nfsctl install --type server
+  sudo nfsctl export add --path /srv/nfs --client "10.0.0.0/24" --options "rw,sync"
+  sudo nfsctl export list
+  sudo nfsctl status
+  nfsctl --dry-run setup --yes
+EOF
+    exit 0
+}
+
+# Parse global flags, collecting remaining args
+ARGS=()
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -v|--verbose) VERBOSE=1; shift ;;
+        -n|--dry-run) DRY_RUN=1; shift ;;
+        -y|--yes)     YES=1; shift ;;
+        -h|--help)    usage ;;
+        --)           shift; ARGS+=("$@"); break ;;
+        -*)
+            # Unknown global flag — might be a command flag, pass through
+            ARGS+=("$1"); shift ;;
+        *)
+            ARGS+=("$1"); shift ;;
+    esac
+done
+
+set -- "${ARGS[@]}"
+
+if [[ $# -eq 0 ]]; then
+    usage
+fi
+
+# ── Source common library ────────────────────────────────────────────
+source "${NFSCTL_ROOT}/lib/common.sh"
+
+# ── Command routing ──────────────────────────────────────────────────
+command="$1"; shift
+
+case "$command" in
+    install)
+        source "${NFSCTL_ROOT}/commands/install.sh"
+        cmd_install "$@"
+        ;;
+    export)
+        if [[ $# -eq 0 ]]; then
+            die "Missing subcommand. Usage: nfsctl export {add|remove|list|apply}"
+        fi
+        subcommand="$1"; shift
+        case "$subcommand" in
+            add)
+                source "${NFSCTL_ROOT}/commands/export-add.sh"
+                cmd_export_add "$@"
+                ;;
+            remove)
+                source "${NFSCTL_ROOT}/commands/export-remove.sh"
+                cmd_export_remove "$@"
+                ;;
+            list)
+                source "${NFSCTL_ROOT}/commands/export-list.sh"
+                cmd_export_list "$@"
+                ;;
+            apply)
+                source "${NFSCTL_ROOT}/commands/export-apply.sh"
+                cmd_export_apply "$@"
+                ;;
+            *)
+                die "Unknown export subcommand: $subcommand"
+                ;;
+        esac
+        ;;
+    service)
+        source "${NFSCTL_ROOT}/commands/service.sh"
+        cmd_service "$@"
+        ;;
+    firewall)
+        source "${NFSCTL_ROOT}/commands/firewall.sh"
+        cmd_firewall "$@"
+        ;;
+    status)
+        source "${NFSCTL_ROOT}/commands/status.sh"
+        cmd_status "$@"
+        ;;
+    setup)
+        source "${NFSCTL_ROOT}/commands/setup.sh"
+        cmd_setup "$@"
+        ;;
+    *)
+        die "Unknown command: $command. Run 'nfsctl --help' for usage."
+        ;;
+esac
