@@ -89,6 +89,9 @@ sudo nfsctl setup
 # Non-interactive with explicit values
 sudo nfsctl setup --yes --path /srv/nfs --client "192.168.1.0/24"
 
+# From a config file (multiple exports)
+sudo nfsctl setup --config conf/exports.conf.example --yes
+
 # Client-only setup
 sudo nfsctl setup --yes --type client
 
@@ -99,11 +102,35 @@ sudo nfsctl --dry-run setup --yes
 | Flag | Description |
 |------|-------------|
 | `--type server\|client` | Installation type (default: `server`) |
-| `--path PATH` | Export path |
+| `--path PATH` | Export path (single export) |
 | `--client CLIENT` | Client specifier |
 | `--options OPTIONS` | NFS export options |
+| `--config FILE` | Read exports from a config file (see below) |
 
-In non-interactive mode without `--path`, a default export is created at `/srv/nfs` for `10.0.0.0/8` with options `rw,sync,no_subtree_check`.
+In non-interactive mode without `--path` or `--config`, a default export is created at `/srv/nfs` for `10.0.0.0/8` with options `rw,sync,no_subtree_check`.
+
+#### Export Config File Format
+
+The `--config` flag reads exports from a file, one per line:
+
+```
+# Lines starting with # are comments. Blank lines are ignored.
+# Format: PATH CLIENT OPTIONS
+# CLIENT and OPTIONS are optional (defaults are used if omitted).
+
+/home/daedalus    192.168.0.0/24  rw,sync,no_subtree_check,no_root_squash
+/mnt/scratch      192.168.0.0/24  rw,sync,no_subtree_check,no_root_squash
+/mnt/arkiv        192.168.0.0/24  rw,sync,no_subtree_check,no_root_squash
+/mnt/hodgepodge   192.168.0.0/24  rw,sync,no_subtree_check,no_root_squash
+```
+
+An example file is provided at `conf/exports.conf.example`. Copy and edit it for your environment:
+
+```bash
+cp conf/exports.conf.example conf/my-exports.conf
+# Edit conf/my-exports.conf with your paths and clients
+sudo nfsctl setup --config conf/my-exports.conf --yes
+```
 
 #### `install` -- Install Packages
 
@@ -332,6 +359,7 @@ commands/
   status.sh                 Status overview
 conf/
   defaults.conf             Default configuration values
+  exports.conf.example      Example export config file for --config
 tests/
   helpers/mock.sh           Test framework and mock helpers
   test_validation.sh        Validator unit tests (51 assertions)

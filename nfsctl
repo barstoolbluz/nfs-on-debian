@@ -36,6 +36,7 @@ Commands:
 
 Examples:
   sudo nfsctl setup
+  sudo nfsctl setup --config conf/exports.conf.example --yes
   sudo nfsctl install --type server
   sudo nfsctl export add --path /srv/nfs --client "10.0.0.0/24" --options "rw,sync"
   sudo nfsctl export list

@@ -1,0 +1,17 @@
+# nfsctl export configuration file
+# Used with: sudo nfsctl setup --config conf/exports.conf.example --yes
+#
+# Format: PATH CLIENT OPTIONS
+# One export per line. Fields are space-separated.
+# Lines starting with # are comments. Blank lines are ignored.
+#
+# If CLIENT is omitted, the default from defaults.conf is used (10.0.0.0/8).
+# If OPTIONS is omitted, the default is used (rw,sync,no_subtree_check).
+#
+# Security note: no_root_squash grants remote root full access to the share.
+# Remove it if you don't need remote root privileges on the client.
+
+/home/daedalus    192.168.0.0/24  rw,sync,no_subtree_check,no_root_squash
+/mnt/scratch      192.168.0.0/24  rw,sync,no_subtree_check,no_root_squash
+/mnt/arkiv        192.168.0.0/24  rw,sync,no_subtree_check,no_root_squash
+/mnt/hodgepodge   192.168.0.0/24  rw,sync,no_subtree_check,no_root_squash
