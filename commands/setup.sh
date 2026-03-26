@@ -124,6 +124,10 @@ EOF
         validate_export_path "$export_path" || die "Invalid export path: $export_path"
 
         client=$(ask_value "client" "Client" "${DEFAULT_CLIENT}" "validate_nfs_client")
+        if is_interactive && ! wizard_has "options"; then
+            printf "  Tip: add no_root_squash if clients need root access to the share\n" >&2
+            printf "  (without it, remote root is mapped to 'nobody' for safety)\n" >&2
+        fi
         options=$(ask_value "options" "NFS options" "${DEFAULT_EXPORT_OPTIONS}" "validate_export_options")
 
         if [[ ! -d "$export_path" ]]; then
@@ -151,6 +155,8 @@ EOF
             local export_path client options
             export_path=$(ask_value "path" "Export path" "${DEFAULT_EXPORT_PATH}" "validate_export_path")
             client=$(ask_value "client" "Client (IP, CIDR, hostname, or *)" "${DEFAULT_CLIENT}" "validate_nfs_client")
+            printf "  Tip: add no_root_squash if clients need root access to the share\n" >&2
+            printf "  (without it, remote root is mapped to 'nobody' for safety)\n" >&2
             options=$(ask_value "options" "NFS options" "${DEFAULT_EXPORT_OPTIONS}" "validate_export_options")
 
             if [[ ! -d "$export_path" ]]; then

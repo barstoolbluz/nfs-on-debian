@@ -40,6 +40,10 @@ EOF
     local client
     client=$(ask_value "client" "Client (IP, CIDR, hostname, or *)" "${DEFAULT_CLIENT}" "validate_nfs_client")
 
+    if is_interactive && ! wizard_has "options"; then
+        printf "  Tip: add no_root_squash if clients need root access to the share\n" >&2
+        printf "  (without it, remote root is mapped to 'nobody' for safety)\n" >&2
+    fi
     local options
     options=$(ask_value "options" "NFS options" "${DEFAULT_EXPORT_OPTIONS}" "validate_export_options")
 
